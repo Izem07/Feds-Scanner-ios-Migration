@@ -39,10 +39,6 @@ jobs:
             "Set :NSPhotoLibraryUsageDescription 'This app requires access to the photo library to select barcode images.'" \
             ios/Runner/Info.plist
 
-      - name: Install CocoaPods dependencies
-        run: pod install
-        working-directory: ios
-
       - name: Build iOS App (Unsigned)
         run: flutter build ios --release --no-codesign
 
