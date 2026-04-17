@@ -5,7 +5,11 @@
   "packages": [
     {
       "name": "scout_ops_scan",
+<<<<<<< Updated upstream
       "version": "5.5.5+1",
+=======
+      "version": "1.2.3+1",
+>>>>>>> Stashed changes
       "dependencies": [
         "battery_plus",
         "csv",

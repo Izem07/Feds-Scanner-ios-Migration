@@ -21,7 +21,7 @@ class ScoutOpsService {
   ScoutOpsService._internal();
 
   final StreamController<ScoutOpsData> _dataController =
-  StreamController<ScoutOpsData>.broadcast();
+      StreamController<ScoutOpsData>.broadcast();
   Stream<ScoutOpsData> get dataStream => _dataController.stream;
 
   ScoutOpsData _currentData = ScoutOpsData(
@@ -94,6 +94,11 @@ class ScoutOpsService {
 
     List<String> columns = dataRow.split(',');
 
+    print("Parsed ${columns.length} columns from QR data");
+    for (int i = 0; i < columns.length && i < 10; i++) {
+      print("  col[$i] = '${columns[i]}'");
+    }
+
     int targetBattery = _currentData.targetBattery;
     String? matchNumber;
     String? station;
@@ -103,19 +108,28 @@ class ScoutOpsService {
     // 0: Team
     // 1: MatchKey
     // 2: MatchNumber
+    // 3: ScouterName
     // 4: AllianceColor
+    // 5: EventKey
     // 6: Station
     // 7: BatteryPercentage
-    if (columns.length > 7) {
-      if (int.tryParse(columns[7]) != null) {
-        targetBattery = int.parse(columns[7]);
-      } else {
-        String battStr = columns[7].replaceAll('%', '').trim();
-        targetBattery = int.tryParse(battStr) ?? _currentData.targetBattery;
+    if (columns.length > 6) {
+      if (columns.length > 7) {
+        if (int.tryParse(columns[7]) != null) {
+          targetBattery = int.parse(columns[7]);
+        } else {
+          String battStr = columns[7].replaceAll('%', '').trim();
+          targetBattery = int.tryParse(battStr) ?? _currentData.targetBattery;
+        }
       }
       alliance = columns[4].trim();
       station = columns[6].trim();
       matchNumber = columns[2].trim();
+      print(
+          "Extracted -> match: $matchNumber, alliance: $alliance, station: $station");
+    } else {
+      print(
+          "Not enough columns (${columns.length}) to extract match/alliance/station");
     }
 
     // prevent duplicate scans
@@ -147,7 +161,7 @@ class ScoutOpsService {
         return SyncResult(
           success: false,
           message:
-          'Database not configured. Open Settings to add your Neon connection string.',
+              'Database not configured. Open Settings to add your Neon connection string.',
         );
       }
 
@@ -160,18 +174,18 @@ class ScoutOpsService {
         return SyncResult(
             success: false,
             message:
-            'Failed to connect to Neon. Check credentials and network.');
+                'Failed to connect to Neon. Check credentials and network.');
       }
 
       final headers = csvHeaders.split(',');
       final count =
-      await db.insertRecords(_currentData.scannedRecords, headers);
+          await db.insertRecords(_currentData.scannedRecords, headers);
 
       if (count == 0) {
         return SyncResult(
             success: false,
             message:
-            'No records were inserted. Possible duplicates or parse errors.');
+                'No records were inserted. Possible duplicates or parse errors.');
       }
 
       return SyncResult(
@@ -236,8 +250,10 @@ class ScoutOpsService {
     try {
       final level = await battery.batteryLevel;
       final state = await battery.batteryState;
-      final charging = state == BatteryState.charging || state == BatteryState.full;
-      _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
+      final charging =
+          state == BatteryState.charging || state == BatteryState.full;
+      _currentData =
+          _currentData.copyWith(moduleBattery: level, isCharging: charging);
       _dataController.add(_currentData);
     } catch (_) {}
 
@@ -245,8 +261,10 @@ class ScoutOpsService {
     battery.onBatteryStateChanged.listen((BatteryState state) async {
       try {
         final level = await battery.batteryLevel;
-        final charging = state == BatteryState.charging || state == BatteryState.full;
-        _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
+        final charging =
+            state == BatteryState.charging || state == BatteryState.full;
+        _currentData =
+            _currentData.copyWith(moduleBattery: level, isCharging: charging);
         _dataController.add(_currentData);
       } catch (_) {}
     });
@@ -256,8 +274,10 @@ class ScoutOpsService {
       try {
         final level = await battery.batteryLevel;
         final state = await battery.batteryState;
-        final charging = state == BatteryState.charging || state == BatteryState.full;
-        _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
+        final charging =
+            state == BatteryState.charging || state == BatteryState.full;
+        _currentData =
+            _currentData.copyWith(moduleBattery: level, isCharging: charging);
         _dataController.add(_currentData);
       } catch (_) {}
     });
