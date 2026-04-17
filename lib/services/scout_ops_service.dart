@@ -228,7 +228,7 @@ class ScoutOpsService {
     _dataController.add(_currentData);
   }
 
-  // Read real device battery level and update every 60 seconds
+  // Read real device battery level and update every 10 seconds
   void startBatterySimulation() async {
     final battery = Battery();
     // Read immediately
@@ -238,8 +238,8 @@ class ScoutOpsService {
       _dataController.add(_currentData);
     } catch (_) {}
 
-    // Then poll every 60 seconds
-    Timer.periodic(const Duration(seconds: 60), (timer) async {
+    // Then poll every 10 seconds
+    Timer.periodic(const Duration(seconds: 10), (timer) async {
       try {
         final level = await battery.batteryLevel;
         _currentData = _currentData.copyWith(moduleBattery: level);
