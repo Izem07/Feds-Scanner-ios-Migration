@@ -27,7 +27,7 @@ class AppConstants {
 }
 
 class AppStrings {
-  static const String appTitle = 'SCOUT-UP SCAN';
+  static const String appTitle = 'SCOUT-OP SCAN';
   static const String moduleBattery = 'MODULE';
   static const String targetBattery = 'TARGET';
   static const String resetButton = 'Reset';

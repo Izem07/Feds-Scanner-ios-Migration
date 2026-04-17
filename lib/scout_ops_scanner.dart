@@ -360,7 +360,7 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
                   Icon(Icons.radar, color: theme.colorScheme.primary, size: 18),
                   const SizedBox(width: 8),
                   const Text(
-                    'SCOUT-UP',
+                    'SCOUT-OP',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 13,
@@ -385,10 +385,18 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
 
             // Battery pill
             _pillBadge(
-              icon: _getBatteryIcon(data.moduleBattery),
-              iconColor: _getBatteryColor(data.moduleBattery),
-              text: '${data.moduleBattery}%',
-              textColor: _getBatteryColor(data.moduleBattery),
+              icon: data.isCharging
+                  ? Icons.battery_charging_full_rounded
+                  : _getBatteryIcon(data.moduleBattery),
+              iconColor: data.isCharging
+                  ? const Color(0xFF00E676)
+                  : _getBatteryColor(data.moduleBattery),
+              text: data.isCharging
+                  ? 'Charging'
+                  : '${data.moduleBattery}%',
+              textColor: data.isCharging
+                  ? const Color(0xFF00E676)
+                  : _getBatteryColor(data.moduleBattery),
             ),
 
             const SizedBox(width: 8),

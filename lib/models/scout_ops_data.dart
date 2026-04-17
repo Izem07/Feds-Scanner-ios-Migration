@@ -4,6 +4,7 @@ class ScoutOpsData {
   final String serialNumber;
   final String? lastScannedCode;
   final DateTime? lastScanTime;
+  final bool isCharging;
 
   // New fields from the CSV parsing
   final String? currentMatchNumber;
@@ -17,6 +18,7 @@ class ScoutOpsData {
     required this.serialNumber,
     this.lastScannedCode,
     this.lastScanTime,
+    this.isCharging = false,
     this.currentMatchNumber,
     this.currentStation,
     this.currentAlliance,
@@ -32,6 +34,7 @@ class ScoutOpsData {
     String? serialNumber,
     Object? lastScannedCode = _unset,
     Object? lastScanTime = _unset,
+    bool? isCharging,
     Object? currentMatchNumber = _unset,
     Object? currentStation = _unset,
     Object? currentAlliance = _unset,
@@ -47,6 +50,7 @@ class ScoutOpsData {
       lastScanTime: lastScanTime == _unset
           ? this.lastScanTime
           : lastScanTime as DateTime?,
+      isCharging: isCharging ?? this.isCharging,
       currentMatchNumber: currentMatchNumber == _unset
           ? this.currentMatchNumber
           : currentMatchNumber as String?,

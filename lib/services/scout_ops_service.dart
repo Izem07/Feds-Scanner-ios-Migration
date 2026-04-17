@@ -228,21 +228,36 @@ class ScoutOpsService {
     _dataController.add(_currentData);
   }
 
-  // Read real device battery level and update every 10 seconds
+  // Listen to real battery changes and charging state
   void startBatterySimulation() async {
     final battery = Battery();
+
     // Read immediately
     try {
       final level = await battery.batteryLevel;
-      _currentData = _currentData.copyWith(moduleBattery: level);
+      final state = await battery.batteryState;
+      final charging = state == BatteryState.charging || state == BatteryState.full;
+      _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
       _dataController.add(_currentData);
     } catch (_) {}
 
-    // Then poll every 10 seconds
+    // Listen to battery state changes (plugged/unplugged)
+    battery.onBatteryStateChanged.listen((BatteryState state) async {
+      try {
+        final level = await battery.batteryLevel;
+        final charging = state == BatteryState.charging || state == BatteryState.full;
+        _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
+        _dataController.add(_currentData);
+      } catch (_) {}
+    });
+
+    // Also poll every 10 seconds to keep level fresh
     Timer.periodic(const Duration(seconds: 10), (timer) async {
       try {
         final level = await battery.batteryLevel;
-        _currentData = _currentData.copyWith(moduleBattery: level);
+        final state = await battery.batteryState;
+        final charging = state == BatteryState.charging || state == BatteryState.full;
+        _currentData = _currentData.copyWith(moduleBattery: level, isCharging: charging);
         _dataController.add(_currentData);
       } catch (_) {}
     });
