@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:battery_plus/battery_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/scout_ops_data.dart';
@@ -227,15 +228,23 @@ class ScoutOpsService {
     _dataController.add(_currentData);
   }
 
-  // Simulate battery drain for demo purposes
-  void startBatterySimulation() {
-    Timer.periodic(const Duration(seconds: 10), (timer) {
-      if (_currentData.moduleBattery > 0) {
-        _currentData = _currentData.copyWith(
-          moduleBattery: _currentData.moduleBattery - 1,
-        );
-      }
+  // Read real device battery level and update every 60 seconds
+  void startBatterySimulation() async {
+    final battery = Battery();
+    // Read immediately
+    try {
+      final level = await battery.batteryLevel;
+      _currentData = _currentData.copyWith(moduleBattery: level);
       _dataController.add(_currentData);
+    } catch (_) {}
+
+    // Then poll every 60 seconds
+    Timer.periodic(const Duration(seconds: 60), (timer) async {
+      try {
+        final level = await battery.batteryLevel;
+        _currentData = _currentData.copyWith(moduleBattery: level);
+        _dataController.add(_currentData);
+      } catch (_) {}
     });
   }
 
