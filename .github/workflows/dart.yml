@@ -5,7 +5,7 @@ on:
 
 jobs:
   build-ios:
-    name: 🎉 iOS Build
+    name: iOS App Build
     runs-on: macos-latest
 
     permissions:
