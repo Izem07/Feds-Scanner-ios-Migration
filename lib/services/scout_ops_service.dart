@@ -242,13 +242,19 @@ class ScoutOpsService {
     _dataController.add(_currentData);
   }
 
+  // iOS under-reports battery by ~2% due to OS-level buffering
+  int _correctBatteryLevel(int level) {
+    if (Platform.isIOS) return (level + 2).clamp(0, 100);
+    return level;
+  }
+
   // Listen to real battery changes and charging state
   void startBatterySimulation() async {
     final battery = Battery();
 
     // Read immediately
     try {
-      final level = await battery.batteryLevel;
+      final level = _correctBatteryLevel(await battery.batteryLevel);
       final state = await battery.batteryState;
       final charging =
           state == BatteryState.charging || state == BatteryState.full;
@@ -260,7 +266,7 @@ class ScoutOpsService {
     // Listen to battery state changes (plugged/unplugged)
     battery.onBatteryStateChanged.listen((BatteryState state) async {
       try {
-        final level = await battery.batteryLevel;
+        final level = _correctBatteryLevel(await battery.batteryLevel);
         final charging =
             state == BatteryState.charging || state == BatteryState.full;
         _currentData =
@@ -272,7 +278,7 @@ class ScoutOpsService {
     // Also poll every 10 seconds to keep level fresh
     Timer.periodic(const Duration(seconds: 10), (timer) async {
       try {
-        final level = await battery.batteryLevel;
+        final level = _correctBatteryLevel(await battery.batteryLevel);
         final state = await battery.batteryState;
         final charging =
             state == BatteryState.charging || state == BatteryState.full;

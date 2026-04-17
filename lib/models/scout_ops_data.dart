@@ -69,10 +69,12 @@ class ScoutOpsData {
     if (currentMatchNumber == null) return set;
     for (final record in scannedRecords) {
       final columns = record.split(',');
-      if (columns.length > 7) {
+      // CSV layout: 0=Team, 1=MatchKey, 2=MatchNumber, 3=ScouterName,
+      //             4=AllianceColor, 5=EventKey, 6=Station, 7=BatteryPercentage
+      if (columns.length > 6) {
+        final matchNum = columns[2].trim();
         final alliance = columns[4].trim();
         final station = columns[6].trim();
-        final matchNum = columns[7].trim();
         if (matchNum == currentMatchNumber) {
           set.add('$alliance $station');
         }
