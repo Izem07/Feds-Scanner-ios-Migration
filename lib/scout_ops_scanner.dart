@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'services/scout_ops_service.dart';
@@ -17,6 +18,11 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
   MobileScannerController controller = MobileScannerController();
   final ScoutOpsService _service = ScoutOpsService();
   bool _showScanSuccess = false;
+  bool _loadingReset = false;
+  bool _loadingSync = false;
+  bool _loadingExport = false;
+  bool _activeHistory = false;
+  bool _activeExport = false;
   late AnimationController _successController;
   late AnimationController _scanLineController;
 
@@ -53,17 +59,31 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
     HapticFeedback.mediumImpact();
   }
 
-  void _onReset() {
+  void _onReset() async {
+    setState(() => _loadingReset = true);
+    await Future.delayed(const Duration(milliseconds: 600));
     _service.resetData();
+    if (mounted) setState(() => _loadingReset = false);
   }
 
   void _onExport() async {
+    setState(() {
+      _loadingExport = true;
+      _activeExport = true;
+    });
     await _service.exportData();
+    if (mounted)
+      setState(() {
+        _loadingExport = false;
+        _activeExport = false;
+      });
   }
 
   void _onSync() async {
+    setState(() => _loadingSync = true);
     final result = await _service.syncToNeon();
     if (mounted) {
+      setState(() => _loadingSync = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message),
@@ -80,6 +100,7 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
   }
 
   void _showHistory(ScoutOpsData data) {
+    setState(() => _activeHistory = true);
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF16162A),
@@ -95,7 +116,9 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
         builder: (context, scrollController) =>
             _buildHistorySheet(data, scrollController),
       ),
-    );
+    ).whenComplete(() {
+      if (mounted) setState(() => _activeHistory = false);
+    });
   }
 
   Widget _buildHistorySheet(
@@ -316,21 +339,22 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
                 child: _buildTopBar(data, theme),
               ),
 
-              // Match info card (only when data available)
-              if (data.currentMatchNumber != null)
-                Positioned(
-                  bottom: 115,
-                  left: 20,
-                  right: 20,
-                  child: _buildMatchCard(data, theme),
-                ),
-
-              // Bottom action bar
+              // Match card + bottom action bar stacked together at the bottom
               Positioned(
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: _buildBottomBar(data, theme),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (data.currentMatchNumber != null)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: _buildMatchCard(data, theme),
+                      ),
+                    _buildBottomBar(data, theme),
+                  ],
+                ),
               ),
             ],
           ),
@@ -412,12 +436,33 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
 
             // Settings
             GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const NeonSettingsScreen(),
-                ),
-              ),
+              onTap: () {
+                if (kIsWeb) {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => DraggableScrollableSheet(
+                      initialChildSize: 0.9,
+                      minChildSize: 0.5,
+                      maxChildSize: 0.95,
+                      expand: false,
+                      builder: (_, sc) => ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(24)),
+                        child: const NeonSettingsScreen(),
+                      ),
+                    ),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const NeonSettingsScreen(),
+                    ),
+                  );
+                }
+              },
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -591,24 +636,29 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
             label: 'Reset',
             color: theme.colorScheme.error,
             onTap: _onReset,
+            loading: _loadingReset,
           ),
           _actionButton(
             icon: Icons.cloud_upload_rounded,
             label: 'Sync',
             color: theme.colorScheme.tertiary,
             onTap: _onSync,
+            loading: _loadingSync,
           ),
           _actionButton(
             icon: Icons.ios_share_rounded,
             label: 'Export',
             color: theme.colorScheme.primary,
             onTap: _onExport,
+            loading: _loadingExport,
+            active: _activeExport,
           ),
           _actionButton(
             icon: Icons.history_rounded,
             label: 'History',
             color: theme.colorScheme.secondary,
             onTap: () => _showHistory(data),
+            active: _activeHistory,
           ),
         ],
       ),
@@ -620,9 +670,11 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
     required String label,
     required Color color,
     required VoidCallback onTap,
+    bool loading = false,
+    bool active = false,
   }) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: loading ? null : onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -630,19 +682,41 @@ class _ScoutOpsScannerState extends State<ScoutOpsScanner>
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withOpacity(loading
+                  ? 0.06
+                  : active
+                      ? 0.25
+                      : 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withOpacity(0.25), width: 1),
+              border: Border.all(
+                color: color.withOpacity(active ? 0.7 : 0.25),
+                width: active ? 1.5 : 1,
+              ),
             ),
-            child: Icon(icon, color: color, size: 24),
+            child: Center(
+              child: loading
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                      ),
+                    )
+                  : Icon(icon, color: color, size: 24),
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             label,
             style: TextStyle(
-              color: color.withOpacity(0.9),
+              color: color.withOpacity(loading
+                  ? 0.4
+                  : active
+                      ? 1.0
+                      : 0.9),
               fontSize: 11,
-              fontWeight: FontWeight.w500,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
         ],

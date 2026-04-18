@@ -1,10 +1,13 @@
-2026/04/17-11:37:35.309 52e8 Log #3: 3 ops saved to Table #7 OK
-2026/04/17-11:37:35.314 52e8 Archiving C:\Users\lionp\AppData\Local\Temp\flutter_tools.a4fbe5d8\flutter_tools_chrome_device.33e2f828\Default\Site Characteristics Database/000003.log: OK
-2026/04/17-11:37:35.347 52e8 Log #6: 3 ops saved to Table #8 OK
-2026/04/17-11:37:35.348 52e8 Archiving C:\Users\lionp\AppData\Local\Temp\flutter_tools.a4fbe5d8\flutter_tools_chrome_device.33e2f828\Default\Site Characteristics Database/000006.log: OK
-2026/04/17-11:37:35.348 52e8 Table #4: 3 entries OK
-2026/04/17-11:37:35.348 52e8 Table #6: 3 entries OK
-2026/04/17-11:37:35.348 52e8 Table #7: 3 entries OK
-2026/04/17-11:37:35.348 52e8 Table #8: 3 entries OK
-2026/04/17-11:37:35.381 52e8 Archiving C:\Users\lionp\AppData\Local\Temp\flutter_tools.a4fbe5d8\flutter_tools_chrome_device.33e2f828\Default\Site Characteristics Database/MANIFEST-000001: OK
-2026/04/17-11:37:35.404 52e8 **** Repaired leveldb C:\Users\lionp\AppData\Local\Temp\flutter_tools.a4fbe5d8\flutter_tools_chrome_device.33e2f828\Default\Site Characteristics Database; recovered 4 files; 879 bytes. Some data may have been lost. ****
+2026/04/17-19:16:39.366 435c Reusing MANIFEST C:\Users\lionp\AppData\Local\Temp\flutter_tools.d907d37\flutter_tools_chrome_device.b3b1d075\Default\Site Characteristics Database/MANIFEST-000001
+2026/04/17-19:16:39.370 435c Recovering log #3
+2026/04/17-19:16:39.370 435c Level-0 table #13: started
+2026/04/17-19:16:39.380 435c Level-0 table #13: 219 bytes OK
+2026/04/17-19:16:39.380 435c Recovering log #6
+2026/04/17-19:16:39.380 435c Level-0 table #14: started
+2026/04/17-19:16:39.388 435c Level-0 table #14: 222 bytes OK
+2026/04/17-19:16:39.388 435c Recovering log #10
+2026/04/17-19:16:39.388 435c Reusing old log C:\Users\lionp\AppData\Local\Temp\flutter_tools.d907d37\flutter_tools_chrome_device.b3b1d075\Default\Site Characteristics Database/000010.log 
+2026/04/17-19:16:39.394 435c Delete type=0 #3
+2026/04/17-19:16:39.394 435c Delete type=2 #4
+2026/04/17-19:16:39.394 435c Delete type=2 #6
+2026/04/17-19:16:39.394 435c Delete type=0 #6

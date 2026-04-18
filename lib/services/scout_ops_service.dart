@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:battery_plus/battery_plus.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/scout_ops_data.dart';
@@ -242,51 +243,79 @@ class ScoutOpsService {
     _dataController.add(_currentData);
   }
 
-  // iOS under-reports battery by ~2% due to OS-level buffering
-  int _correctBatteryLevel(int level) {
-    if (Platform.isIOS) return (level + 2).clamp(0, 100);
-    return level;
+  static const _iosBatteryChannel = MethodChannel('com.scoutops.battery');
+
+  // Use native UIKit channel on iOS for accurate rounding, battery_plus elsewhere
+  Future<int> _getBatteryLevel() async {
+    if (Platform.isIOS) {
+      try {
+        final level =
+            await _iosBatteryChannel.invokeMethod<int>('getBatteryLevel');
+        return (level ?? -1).clamp(0, 100);
+      } catch (_) {}
+    }
+    return await Battery().batteryLevel;
+  }
+
+  Future<bool> _getIsCharging() async {
+    if (Platform.isIOS) {
+      try {
+        return await _iosBatteryChannel.invokeMethod<bool>('isCharging') ??
+            false;
+      } catch (_) {}
+    }
+    final state = await Battery().batteryState;
+    return state == BatteryState.charging || state == BatteryState.full;
   }
 
   // Listen to real battery changes and charging state
   void startBatterySimulation() async {
-    final battery = Battery();
-
     // Read immediately
     try {
-      final level = _correctBatteryLevel(await battery.batteryLevel);
-      final state = await battery.batteryState;
-      final charging =
-          state == BatteryState.charging || state == BatteryState.full;
+      final level = await _getBatteryLevel();
+      final charging = await _getIsCharging();
       _currentData =
           _currentData.copyWith(moduleBattery: level, isCharging: charging);
       _dataController.add(_currentData);
     } catch (_) {}
 
-    // Listen to battery state changes (plugged/unplugged)
-    battery.onBatteryStateChanged.listen((BatteryState state) async {
-      try {
-        final level = _correctBatteryLevel(await battery.batteryLevel);
-        final charging =
-            state == BatteryState.charging || state == BatteryState.full;
-        _currentData =
-            _currentData.copyWith(moduleBattery: level, isCharging: charging);
-        _dataController.add(_currentData);
-      } catch (_) {}
-    });
+    if (Platform.isIOS) {
+      // On iOS poll every 10s — UIDevice notifications aren't exposed via channel
+      Timer.periodic(const Duration(seconds: 10), (timer) async {
+        try {
+          final level = await _getBatteryLevel();
+          final charging = await _getIsCharging();
+          _currentData =
+              _currentData.copyWith(moduleBattery: level, isCharging: charging);
+          _dataController.add(_currentData);
+        } catch (_) {}
+      });
+    } else {
+      // On Android use battery_plus state stream + polling
+      final battery = Battery();
+      battery.onBatteryStateChanged.listen((BatteryState state) async {
+        try {
+          final level = await battery.batteryLevel;
+          final charging =
+              state == BatteryState.charging || state == BatteryState.full;
+          _currentData =
+              _currentData.copyWith(moduleBattery: level, isCharging: charging);
+          _dataController.add(_currentData);
+        } catch (_) {}
+      });
 
-    // Also poll every 10 seconds to keep level fresh
-    Timer.periodic(const Duration(seconds: 10), (timer) async {
-      try {
-        final level = _correctBatteryLevel(await battery.batteryLevel);
-        final state = await battery.batteryState;
-        final charging =
-            state == BatteryState.charging || state == BatteryState.full;
-        _currentData =
-            _currentData.copyWith(moduleBattery: level, isCharging: charging);
-        _dataController.add(_currentData);
-      } catch (_) {}
-    });
+      Timer.periodic(const Duration(seconds: 10), (timer) async {
+        try {
+          final level = await battery.batteryLevel;
+          final state = await battery.batteryState;
+          final charging =
+              state == BatteryState.charging || state == BatteryState.full;
+          _currentData =
+              _currentData.copyWith(moduleBattery: level, isCharging: charging);
+          _dataController.add(_currentData);
+        } catch (_) {}
+      });
+    }
   }
 
   void dispose() {
