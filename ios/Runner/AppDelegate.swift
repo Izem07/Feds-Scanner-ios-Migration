@@ -9,6 +9,8 @@ import UIKit
   ) -> Bool {
     GeneratedPluginRegistrant.register(with: self)
 
+    UIDevice.current.isBatteryMonitoringEnabled = true
+
     let controller = window?.rootViewController as! FlutterViewController
     let channel = FlutterMethodChannel(
       name: "com.scoutops.battery",
@@ -18,9 +20,15 @@ import UIKit
     channel.setMethodCallHandler { call, result in
       switch call.method {
       case "getBatteryLevel":
-        result(BatteryManager.shared.batteryPercent)
+        let level = UIDevice.current.batteryLevel
+        if level < 0 {
+          result(-1)
+        } else {
+          result(Int((level * 100).rounded()))
+        }
       case "isCharging":
-        result(BatteryManager.shared.isCharging)
+        let state = UIDevice.current.batteryState
+        result(state == .charging || state == .full)
       default:
         result(FlutterMethodNotImplemented)
       }
